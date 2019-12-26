@@ -42,92 +42,19 @@ namespace RtkXlsDiffer
             Console.WriteLine("Теперь введите путь к файлу с новыми устройствами и нажмите ENTER:");
             string newpath = Console.ReadLine();
 
+#if DEBUG
+            oldpath = "G:\\old.xlsx";
+            newpath = "G:\\new.xlsx";
+#endif
+
             Console.Clear();
-
-            Application olddevxls = new Application();
-            Workbook olddevxls_wb = olddevxls.Workbooks.Open(oldpath);
-
-            Dictionary<string, PGSO> oldDev = new Dictionary<string, PGSO>();
-
-            try
-            {
-                _Worksheet xlWorksheet = olddevxls_wb.Sheets[1];
-                Range xlRange = xlWorksheet.UsedRange;
-
-                object[,] indexMatrix = (object[,])xlRange.get_Value(XlRangeValueDataType.xlRangeValueDefault);
-
-                int rowCount = indexMatrix.GetLength(0);
-                int colCount = indexMatrix.GetLength(1);
-
-                for (int i = 1; i <= rowCount; i++) //taking care of each Row  
-                {
-                    Console.SetCursorPosition(0, 0);
-                    Console.WriteLine("Читается список старых... " + i);
-
-                    PGSO pgso = new PGSO();
-
-                    pgso.prinadlejn = (indexMatrix[i, 1] != null && indexMatrix[i, 1] != null) ? indexMatrix[i, 1].ToString().Trim() : "";
-                    pgso.mrf = (indexMatrix[i, 2] != null && indexMatrix[i, 2] != null) ? indexMatrix[i, 2].ToString().Trim() : "";
-                    pgso.filial = (indexMatrix[i, 3] != null && indexMatrix[i, 3] != null) ? indexMatrix[i, 3].ToString().Trim() : "";
-                    pgso.codreg = (indexMatrix[i, 4] != null && indexMatrix[i, 4] != null) ? indexMatrix[i, 4].ToString().Trim() : "";
-                    pgso.vendor = (indexMatrix[i, 5] != null && indexMatrix[i, 5] != null) ? indexMatrix[i, 5].ToString().Trim() : "";
-                    pgso.model = (indexMatrix[i, 6] != null && indexMatrix[i, 6] != null) ? indexMatrix[i, 6].ToString().Trim() : "";
-                    pgso.hostname = (indexMatrix[i, 7] != null && indexMatrix[i, 7] != null) ? indexMatrix[i, 7].ToString().Trim() : "";
-                    pgso.commutator = (indexMatrix[i, 8] != null && indexMatrix[i, 8] != null) ? indexMatrix[i, 8].ToString().Trim() : "";
-                    pgso.naimenovanie = (indexMatrix[i, 9] != null && indexMatrix[i, 9] != null) ? indexMatrix[i, 9].ToString().Trim() : "";
-                    pgso.serial = (indexMatrix[i, 10] != null && indexMatrix[i, 10] != null) ? indexMatrix[i, 10].ToString().Trim() : "";
-                    pgso.pover = (indexMatrix[i, 11] != null && indexMatrix[i, 11] != null) ? indexMatrix[i, 11].ToString().Trim() : "";                    
-                    pgso.startdate = (indexMatrix[i, 12] != null && indexMatrix[i, 12] != null) ? indexMatrix[i, 12].ToString().Trim() : "";
-                    pgso.garantstart = (indexMatrix[i, 13] != null && indexMatrix[i, 13] != null) ? indexMatrix[i, 13].ToString().Trim() : "";
-                    pgso.garantend = (indexMatrix[i, 14] != null && indexMatrix[i, 14] != null) ? indexMatrix[i, 14].ToString().Trim() : "";
-                    pgso.contractinfo = (indexMatrix[i, 15] != null && indexMatrix[i, 15] != null) ? indexMatrix[i, 15].ToString().Trim() : "";
-                    pgso.postavshik = (indexMatrix[i, 16] != null && indexMatrix[i, 16] != null) ? indexMatrix[i, 16].ToString().Trim() : "";
-                    pgso.adres = (indexMatrix[i, 17] != null && indexMatrix[i, 17] != null) ? indexMatrix[i, 17].ToString().Trim() : "";
-                    pgso.detail = (indexMatrix[i, 18] != null && indexMatrix[i, 18] != null) ? indexMatrix[i, 18].ToString().Trim() : "";
-                    pgso.function = (indexMatrix[i, 19] != null && indexMatrix[i, 19] != null) ? indexMatrix[i, 19].ToString().Trim() : "";
-                    pgso.chasis = (indexMatrix[i, 20] != null && indexMatrix[i, 20] != null) ? indexMatrix[i, 20].ToString().Trim() : "";
-                    pgso.ipaddr = (indexMatrix[i, 21] != null && indexMatrix[i, 21] != null) ? indexMatrix[i, 21].ToString().Trim() : "";
-                    pgso.asnum = (indexMatrix[i, 22] != null && indexMatrix[i, 22] != null) ? indexMatrix[i, 22].ToString().Trim() : "";
-                    pgso.netlevel = (indexMatrix[i, 23] != null && indexMatrix[i, 23] != null) ? indexMatrix[i, 23].ToString().Trim() : "";
-
-                    string un = pgso.serial.ToLower() + pgso.naimenovanie.ToLower() + pgso.commutator.ToLower();
-                    un = un.Replace(" ", "_").Replace("-", "_").Replace(".", "_").Replace(",", "_");
-
-                    if (!oldDev.ContainsKey(un)) oldDev.Add(un, pgso);
-                }
-
-                Console.WriteLine("Старых устройств в таблице: " + (rowCount - 1));
-                Console.WriteLine("Загружено уникальных устройств: " + (oldDev.Count - 1));
-
-                //cleanup
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
-
-                //release com objects to fully kill excel process from running in the background
-                Marshal.ReleaseComObject(xlRange);
-                Marshal.ReleaseComObject(xlWorksheet);
-
-                //close and release
-                olddevxls_wb.Close();
-                Marshal.ReleaseComObject(olddevxls_wb);
-
-                //quit and release
-                olddevxls.Quit();
-                Marshal.ReleaseComObject(olddevxls);
-            }
-            catch (Exception ex)
-            {
-                Console.Clear();
-                Console.WriteLine("Well, something went wrong. There is a error:" + Environment.NewLine + ex.ToString());
-                olddevxls_wb.Close(0);
-                olddevxls.Quit();
-
-                Marshal.ReleaseComObject(olddevxls_wb);
-                Marshal.ReleaseComObject(olddevxls);
-                Marshal.FinalReleaseComObject(olddevxls);
-
-                goto errr;
-            }
+            bool ipaddr_check = false;
+            bool hostname_check = false;
+            bool model_check = false;
+            bool vendor_check = false;
+            bool commutator_check = false;
+            bool serial_check = false;
+            bool naimenovanie_check = false;
 
             Application newdevxls = new Application();
             Workbook newdevxls_wb = newdevxls.Workbooks.Open(newpath);
@@ -171,6 +98,7 @@ namespace RtkXlsDiffer
                         }
                     }
 
+                    Console.SetCursorPosition(0, 15);
                     if (ipaddr_col == 0) Console.WriteLine("!!!! ipaddress column not found!");
                     if (hostname_col == 0) Console.WriteLine("!!!! hostname column not found!");
                     if (model_col == 0) Console.WriteLine("!!!! model column not found!");
@@ -179,9 +107,14 @@ namespace RtkXlsDiffer
                     if (serial_col == 0) Console.WriteLine("!!!! serial column not found!");
                     if (naimenovanie_col == 0) Console.WriteLine("!!!! name column not found!");
 
+                     model_check = model_col!= 0;
+                     commutator_check = commutator_col != 0;
+                     serial_check = serial_col != 0;
+                     naimenovanie_check = naimenovanie_col != 0;
+
                     for (int i = 2; i <= rowCount; i++) //taking care of each Row  
                     {
-                        Console.SetCursorPosition(0, 3);
+                        Console.SetCursorPosition(0, 0);
                         Console.WriteLine("Чтение списка новых устройств... " + i);
 
                         try
@@ -195,8 +128,12 @@ namespace RtkXlsDiffer
                             pgso.serial = (serial_col != 0 && indexMatrix[i, serial_col] != null && indexMatrix[i, serial_col] != null) ? indexMatrix[i, serial_col].ToString().Trim() : "";
                             pgso.naimenovanie = (naimenovanie_col != 0 && indexMatrix[i, naimenovanie_col] != null && indexMatrix[i, naimenovanie_col] != null) ? indexMatrix[i, naimenovanie_col].ToString().Trim() : "";
 
-                            string un = pgso.serial.ToLower() + pgso.naimenovanie.ToLower() + pgso.commutator.ToLower();
-                            un = un.Replace(" ", "_").Replace("-", "_").Replace(".", "_").Replace(",", "_");
+                            string un = "";
+                            un += serial_check ? pgso.serial.ToLower() : "";
+                            un += naimenovanie_check ? pgso.naimenovanie.ToLower() : "";
+                            un += commutator_check ? pgso.commutator.ToLower() : "";
+                            un += model_check ? pgso.model.ToLower() : "";
+                            //un = un.Replace(" ", "_").Replace("-", "_").Replace(".", "_").Replace(",", "_");
 
                             if (!newDev.ContainsKey(un)) newDev.Add(un, pgso);
                         }
@@ -243,11 +180,111 @@ namespace RtkXlsDiffer
                 goto errr;
             }
 
+            Application olddevxls = new Application();
+            Workbook olddevxls_wb = olddevxls.Workbooks.Open(oldpath);
+
+            Dictionary<string, PGSO> oldDev = new Dictionary<string, PGSO>();
+
+            try
+            {
+                _Worksheet xlWorksheet = olddevxls_wb.Sheets[1];
+                Range xlRange = xlWorksheet.UsedRange;
+
+                object[,] indexMatrix = (object[,])xlRange.get_Value(XlRangeValueDataType.xlRangeValueDefault);
+
+                int rowCount = indexMatrix.GetLength(0);
+                int colCount = indexMatrix.GetLength(1);
+
+                for (int i = 1; i <= rowCount; i++) //taking care of each Row  
+                {
+                    Console.SetCursorPosition(0, 3);
+                    Console.WriteLine("Читается список старых устройств... " + i);
+
+                    PGSO pgso = new PGSO();
+
+                    pgso.prinadlejn = (indexMatrix[i, 1] != null && indexMatrix[i, 1] != null) ? indexMatrix[i, 1].ToString().Trim() : "";
+                    pgso.mrf = (indexMatrix[i, 2] != null && indexMatrix[i, 2] != null) ? indexMatrix[i, 2].ToString().Trim() : "";
+                    pgso.filial = (indexMatrix[i, 3] != null && indexMatrix[i, 3] != null) ? indexMatrix[i, 3].ToString().Trim() : "";
+                    pgso.codreg = (indexMatrix[i, 4] != null && indexMatrix[i, 4] != null) ? indexMatrix[i, 4].ToString().Trim() : "";
+                    pgso.vendor = (indexMatrix[i, 5] != null && indexMatrix[i, 5] != null) ? indexMatrix[i, 5].ToString().Trim() : "";
+                    pgso.model = (indexMatrix[i, 6] != null && indexMatrix[i, 6] != null) ? indexMatrix[i, 6].ToString().Trim() : "";
+                    pgso.hostname = (indexMatrix[i, 7] != null && indexMatrix[i, 7] != null) ? indexMatrix[i, 7].ToString().Trim() : "";
+                    pgso.commutator = (indexMatrix[i, 8] != null && indexMatrix[i, 8] != null) ? indexMatrix[i, 8].ToString().Trim() : "";
+                    pgso.naimenovanie = (indexMatrix[i, 9] != null && indexMatrix[i, 9] != null) ? indexMatrix[i, 9].ToString().Trim() : "";
+                    pgso.serial = (indexMatrix[i, 10] != null && indexMatrix[i, 10] != null) ? indexMatrix[i, 10].ToString().Trim() : "";
+                    pgso.pover = (indexMatrix[i, 11] != null && indexMatrix[i, 11] != null) ? indexMatrix[i, 11].ToString().Trim() : "";                    
+                    pgso.startdate = (indexMatrix[i, 12] != null && indexMatrix[i, 12] != null) ? indexMatrix[i, 12].ToString().Trim() : "";
+                    pgso.garantstart = (indexMatrix[i, 13] != null && indexMatrix[i, 13] != null) ? indexMatrix[i, 13].ToString().Trim() : "";
+                    pgso.garantend = (indexMatrix[i, 14] != null && indexMatrix[i, 14] != null) ? indexMatrix[i, 14].ToString().Trim() : "";
+                    pgso.contractinfo = (indexMatrix[i, 15] != null && indexMatrix[i, 15] != null) ? indexMatrix[i, 15].ToString().Trim() : "";
+                    pgso.postavshik = (indexMatrix[i, 16] != null && indexMatrix[i, 16] != null) ? indexMatrix[i, 16].ToString().Trim() : "";
+                    pgso.adres = (indexMatrix[i, 17] != null && indexMatrix[i, 17] != null) ? indexMatrix[i, 17].ToString().Trim() : "";
+                    pgso.detail = (indexMatrix[i, 18] != null && indexMatrix[i, 18] != null) ? indexMatrix[i, 18].ToString().Trim() : "";
+                    pgso.function = (indexMatrix[i, 19] != null && indexMatrix[i, 19] != null) ? indexMatrix[i, 19].ToString().Trim() : "";
+                    pgso.chasis = (indexMatrix[i, 20] != null && indexMatrix[i, 20] != null) ? indexMatrix[i, 20].ToString().Trim() : "";
+                    pgso.ipaddr = (indexMatrix[i, 21] != null && indexMatrix[i, 21] != null) ? indexMatrix[i, 21].ToString().Trim() : "";
+                    pgso.asnum = (indexMatrix[i, 22] != null && indexMatrix[i, 22] != null) ? indexMatrix[i, 22].ToString().Trim() : "";
+                    pgso.netlevel = (indexMatrix[i, 23] != null && indexMatrix[i, 23] != null) ? indexMatrix[i, 23].ToString().Trim() : "";
+
+                    string un = "";
+                    un += serial_check ? pgso.serial.ToLower() : "";
+                    un += naimenovanie_check ? pgso.naimenovanie.ToLower() : "";
+                    un += commutator_check ? pgso.commutator.ToLower() : "";
+                    un += model_check ? pgso.model.ToLower() : "";
+                    //un = un.Replace(" ", "_").Replace("-", "_").Replace(".", "_").Replace(",", "_");
+
+                    if (!oldDev.ContainsKey(un)) oldDev.Add(un, pgso);
+                }
+
+                Console.WriteLine("Старых устройств в таблице: " + (rowCount - 1));
+                Console.WriteLine("Загружено уникальных устройств: " + (oldDev.Count - 1));
+
+                //cleanup
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+
+                //release com objects to fully kill excel process from running in the background
+                Marshal.ReleaseComObject(xlRange);
+                Marshal.ReleaseComObject(xlWorksheet);
+
+                //close and release
+                olddevxls_wb.Close();
+                Marshal.ReleaseComObject(olddevxls_wb);
+
+                //quit and release
+                olddevxls.Quit();
+                Marshal.ReleaseComObject(olddevxls);
+            }
+            catch (Exception ex)
+            {
+                Console.Clear();
+                Console.WriteLine("Well, something went wrong. There is a error:" + Environment.NewLine + ex.ToString());
+                olddevxls_wb.Close(0);
+                olddevxls.Quit();
+
+                Marshal.ReleaseComObject(olddevxls_wb);
+                Marshal.ReleaseComObject(olddevxls);
+                Marshal.FinalReleaseComObject(olddevxls);
+
+                goto errr;
+            }            
+
             int newDevs = 0;
+
+            string check = "Сравнение будет основано на полях ";
+            check += serial_check ? "serial, " : "";
+            check += naimenovanie_check ?"name, " : "";
+            check += commutator_check ? "commutator, " : "";
+            check += model_check ? "model, " : "";
+            check = check.Trim().TrimEnd(',');
+
+            Console.WriteLine();
+            Console.WriteLine("---------------" + check + "---------------");
+            Console.WriteLine();
 
             foreach (var dev in newDev)
             {
-                Console.SetCursorPosition(0, 6);
+                Console.SetCursorPosition(0, 9);
                 Console.WriteLine("Добавляем новые устройства... " + newDevs + "   ");
 
                 if (!oldDev.ContainsKey(dev.Key))
@@ -257,7 +294,7 @@ namespace RtkXlsDiffer
                 }
             }
 
-            Console.SetCursorPosition(0, 6);
+            Console.SetCursorPosition(0, 9);
             Console.WriteLine("Добавлено новых устройств: " + newDevs + "    ");
             Console.WriteLine("Общее количество устройств в новом списке: " + (oldDev.Count - 1) + "");
             Console.WriteLine("Нажмите Enter для создания новой таблицы...");
